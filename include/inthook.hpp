@@ -27,7 +27,6 @@ namespace maticHook {
 	}
 
 	UCHAR original_call[]{
-#ifdef _WIN64
 		0x51,                                                       // push rcx
 		0x52,                                                       // push rdx
 		0x41, 0x50,                                                 // push r8
@@ -46,14 +45,6 @@ namespace maticHook {
 		0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,             // mov rax, function
 		0x00, 0x00,
 		0xFF, 0xE0                                                  // jmp rax
-#elif _WIN32
-		0x68, 0x00, 0x00, 0x00, 0x00, // push function
-		0xB8, 0xFF, 0xFF, 0xFF, 0xFF, // mov eax, inthook::ignore
-		0xFF, 0xD0,                   // call eax
-		0x58,                         // pop eax
-		0xB8, 0x00, 0x00, 0x00, 0x00, // mov eax, function 
-		0xFF, 0xE0                    // jmp eax
-#endif
 	};
 
 	struct info {
@@ -87,11 +78,7 @@ namespace maticHook {
 					Log("Setting single-step flag");
 					return EXCEPTION_CONTINUE_EXECUTION;
 				}
-#ifdef _WIN64
 				exception->ContextRecord->Rip = (DWORD64)cur.hook;
-#elif _WIN32
-				exception->ContextRecord->Eip = (DWORD)cur.hook;
-#endif
 				Log("Redirecting execution to hook function %p", cur.hook);
 				return EXCEPTION_CONTINUE_EXECUTION;
 			}
