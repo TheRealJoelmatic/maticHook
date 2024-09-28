@@ -4,6 +4,7 @@ It was made to bypass anticheat hooks (e.g., NtProtectVirtualMemory, VirtualProt
 
 You could also use the .asm file provided in this project to update minhook to work. ([VirtualProtect in Minhook](https://github.com/TsudaKageyu/minhook/blob/c1a7c3843bd1a5fe3eb779b64c0d823bca3dc339/src/hook.c#L406))
 
+UC thread: [https://www.unknowncheats.me/forum/combat-master/663786-hooks.html](https://www.unknowncheats.me/forum/combat-master/663786-hooks.html)
 # Assembly
 (The function is an standard get fov for unity)
 
