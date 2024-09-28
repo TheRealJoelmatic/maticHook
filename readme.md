@@ -1,5 +1,5 @@
 # Matic Hook
-his is a simple and minimal hooking library that uses syscalls.
+This is a simple and minimal hooking library that uses syscalls.
 It was made to bypass anticheat hooks (e.g., NtProtectVirtualMemory, VirtualProtect) that block access to changing the assembly, rendering libraries like MinHook unusable.
 
 You could also use the .asm file provided in this project to update minhook to work. ([VirtualProtect in Minhook](https://github.com/TsudaKageyu/minhook/blob/c1a7c3843bd1a5fe3eb779b64c0d823bca3dc339/src/hook.c#L406))
