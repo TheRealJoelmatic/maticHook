@@ -117,15 +117,9 @@ namespace maticHook {
 		memcpy(address, &original_call, sizeof(original_call));
 		Log("Copied original_call to %p", address);
 
-#ifdef _WIN64
 		* (DWORD64*)((DWORD64)address + 9) = (DWORD64)function;
 		*(DWORD64*)((DWORD64)address + 19) = (DWORD64)maticHook::ignore;
 		*(DWORD64*)((DWORD64)address + 38) = (DWORD64)function;
-#elif _WIN32
-		* (DWORD*)((DWORD)address + 1) = (DWORD)function;
-		*(DWORD*)((DWORD)address + 6) = (DWORD)inthook::ignore;
-		*(DWORD*)((DWORD)address + 14) = (DWORD)function;
-#endif
 		Log("Set function pointers in trampoline code");
 
 		return address;
