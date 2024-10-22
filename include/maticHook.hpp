@@ -1,4 +1,7 @@
 #pragma once
+#ifndef MATIC_HOOK
+#define MATIC_HOOK
+
 #include <Windows.h>
 #include <vector>
 #include <cstdio>
@@ -16,7 +19,7 @@ extern "C" NTSTATUS MyNtProtectVirtualMemory(
 
 namespace maticHook {
 	// Logging function
-	void Log(const char* format, ...) {
+	inline void Log(const char* format, ...) {
 		char buffer[256];
 		va_list args;
 		va_start(args, format);
@@ -26,7 +29,17 @@ namespace maticHook {
 		//std::cout << "[LOG] -> " << buffer << std::endl;
 	}
 
-	UCHAR original_call[]{
+	inline bool IsValidAddress(uintptr_t address)
+	{
+		if (address < 0x10000 || address > 0x7FFFFFFFFFFF)
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	inline UCHAR original_call[]{
 		0x51,                                                       // push rcx
 		0x52,                                                       // push rdx
 		0x41, 0x50,                                                 // push r8
@@ -56,10 +69,10 @@ namespace maticHook {
 		BOOL ignore;
 		BOOL disabled;
 	};
-	std::vector<info> hooks{};
-	PVOID seh;
+	inline std::vector<info> hooks{};
+	inline PVOID seh;
 
-	LONG NTAPI vectored_handler(_EXCEPTION_POINTERS* exception) {
+	inline LONG NTAPI vectored_handler(_EXCEPTION_POINTERS* exception) {
 		DWORD ex_code = exception->ExceptionRecord->ExceptionCode;
 		if (ex_code != EXCEPTION_BREAKPOINT && ex_code != EXCEPTION_SINGLE_STEP)
 			return EXCEPTION_CONTINUE_SEARCH;
@@ -94,7 +107,7 @@ namespace maticHook {
 		return EXCEPTION_CONTINUE_SEARCH;
 	}
 
-	bool ignore(void* function) {
+	inline bool ignore(void* function) {
 		for (info& cur : hooks) {
 			if (function != cur.function || cur.disabled)
 				continue;
@@ -106,7 +119,7 @@ namespace maticHook {
 		return false;
 	}
 
-	void* original(void* function) {
+	inline void* original(void* function) {
 		void* address = VirtualAlloc(0, sizeof(original_call), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 		if (!address) {
 			Log("Failed to allocate memory for original function, error: %d", GetLastError());
@@ -117,18 +130,26 @@ namespace maticHook {
 		memcpy(address, &original_call, sizeof(original_call));
 		Log("Copied original_call to %p", address);
 
+#ifdef _WIN64
 		* (DWORD64*)((DWORD64)address + 9) = (DWORD64)function;
 		*(DWORD64*)((DWORD64)address + 19) = (DWORD64)maticHook::ignore;
 		*(DWORD64*)((DWORD64)address + 38) = (DWORD64)function;
+#elif _WIN32
+		* (DWORD*)((DWORD)address + 1) = (DWORD)function;
+		*(DWORD*)((DWORD)address + 6) = (DWORD)inthook::ignore;
+		*(DWORD*)((DWORD)address + 14) = (DWORD)function;
+#endif
 		Log("Set function pointers in trampoline code");
 
 		return address;
 	}
 
-	bool create(void* function, void* hook, void*& original) {
+	inline bool create(void* function, void* hook, void*& original) {
 		info new_hook = { function, hook };
 		SIZE_T regionSize = 1;
 		PVOID baseAddress = function;
+
+		if (!IsValidAddress((uintptr_t)function)) return false;
 
 		NTSTATUS status = MyNtProtectVirtualMemory(
 			GetCurrentProcess(),
@@ -162,7 +183,7 @@ namespace maticHook {
 		return true;
 	}
 
-	bool remove(void* function) {
+	inline bool remove(void* function) {
 		DWORD unused;
 		for (info& cur : hooks) {
 			if (function != cur.function || cur.disabled)
@@ -192,7 +213,7 @@ namespace maticHook {
 		return false;
 	}
 
-	bool init() {
+	inline bool init() {
 		seh = AddVectoredExceptionHandler(1, vectored_handler);
 		if (!seh) {
 			Log("Failed to add vectored exception handler, error: %d", GetLastError());
@@ -202,7 +223,7 @@ namespace maticHook {
 		return true;
 	}
 
-	bool uninit() {
+	inline bool uninit() {
 		DWORD unused;
 		for (info& cur : hooks) {
 			if (cur.disabled)
@@ -237,3 +258,5 @@ namespace maticHook {
 		return true;
 	}
 }
+
+#endif  // MATIC_HOOK
