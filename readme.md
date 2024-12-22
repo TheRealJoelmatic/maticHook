@@ -30,7 +30,7 @@ void WINAPI hk_weapon_sway_update(void* thisptr) {
 
 void main(){
     //init library
-    inthook::init()
+    maticHook::init()
     
     //make hook
     lpTarget = (LPVOID)(CombatMaster::GameAssembly + Offsets::WeaponSwayUpdate);
